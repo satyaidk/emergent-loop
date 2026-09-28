@@ -49,6 +49,7 @@ def build_production_dependencies() -> tuple[CoachService, MemoryStore]:
         model=settings.openai_model,
         effort=settings.effort,
         max_tokens=settings.max_tokens,
+        base_url=settings.openai_base_url,
     )
     return CoachService(memory, llm, settings.max_history_messages), memory
 
@@ -100,7 +101,7 @@ def create_app(coach: CoachService | None = None, memory: MemoryStore | None = N
             )
         except LLMUnavailableError as exc:
             logger.error("chat failed: %s", exc)
-            raise HTTPException(status_code=502, detail="The tutor model is unavailable right now") from exc
+            raise HTTPException(status_code=502, detail=exc.user_message) from exc
         return ChatResponse(
             reply=result.reply,
             memories_used=[MemoryOut(**asdict(m)) for m in result.memories_used],

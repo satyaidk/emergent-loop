@@ -6,7 +6,8 @@ things explained, then uses that to personalise every answer and to write you a 
 
 Long-term memory is powered by [Hindsight](https://github.com/vectorize-io/hindsight), an agent
 memory system, instead of plain chat history or a basic RAG vector store. The tutor's reasoning is
-powered by an OpenAI model (`gpt-5-mini` by default).
+powered by any OpenAI-compatible model: OpenAI's `gpt-5-mini`, or a free model running on your own
+computer with [Ollama](https://ollama.com).
 
 ```
 You (3 weeks ago): "My factorial function crashes with RecursionError..."
@@ -51,12 +52,19 @@ Design decisions, alternatives and trade-offs are in [docs/DESIGN.md](docs/DESIG
 
 ## Quick start
 
-You need **Docker Desktop** and an **OpenAI API key** ([get one here](https://platform.openai.com/api-keys)).
+You need **Docker Desktop**, plus one of these for the AI model:
+
+- **Option A, OpenAI (paid):** an [OpenAI API key](https://platform.openai.com/api-keys) with credits.
+- **Option B, Ollama (free, runs on your computer):** install [Ollama](https://ollama.com), then run
+  `ollama pull qwen3:4b-instruct` (about 2.5 GB). No account or key needed.
 
 ```bash
-cp .env.example .env          # then paste your key into OPENAI_API_KEY
+cp .env.example .env          # then follow Option A or Option B inside it
 docker compose up --build
 ```
+
+With Ollama, answers depend on your hardware: expect a few seconds to a minute per reply on a laptop,
+and a small model gives simpler answers than `gpt-5-mini`.
 
 - App: http://localhost:8000
 - API docs (auto-generated, interactive): http://localhost:8000/docs
@@ -92,7 +100,7 @@ uvicorn app.main:app --reload
 ## Quality
 
 ```bash
-pytest -q                     # 22 tests, run offline using fakes (no API key, no server)
+pytest -q                     # 28 tests, run offline using fakes (no API key, no server)
 ruff check . && ruff format --check .
 python -m scripts.eval_memory # measures reply quality with memory ON vs OFF (needs the live stack)
 ```
@@ -122,10 +130,12 @@ docs/          Design doc and learning path
 
 ## Cost
 
-Every chat turn is one OpenAI call for the reply plus background calls inside Hindsight to extract
-facts (also on `gpt-5-mini` by default). The eval script makes about 10 OpenAI calls. Set a monthly
-budget limit in your OpenAI account settings while you experiment. `LEARNLOOP_EFFORT=minimal` gives
-cheaper, faster replies.
+With Ollama (Option B) everything runs on your computer and costs nothing.
+
+With OpenAI (Option A), every chat turn is one OpenAI call for the reply plus background calls inside
+Hindsight to extract facts (also on `gpt-5-mini` by default). The eval script makes about 10 OpenAI
+calls. Set a monthly budget limit in your OpenAI account settings while you experiment.
+`LEARNLOOP_EFFORT=minimal` gives cheaper, faster replies.
 
 ## License
 

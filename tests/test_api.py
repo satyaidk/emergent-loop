@@ -51,6 +51,15 @@ def test_chat_returns_502_when_the_model_is_down(memory):
     assert res.json()["detail"] == "The tutor model is unavailable right now"
 
 
+def test_chat_shows_the_specific_reason_when_the_model_fails(memory):
+    llm = FakeLLM(error=LLMUnavailableError("429 insufficient_quota", "Your OpenAI account has no credits left."))
+    with TestClient(create_app(coach=CoachService(memory, llm), memory=memory)) as client:
+        res = client.post("/api/chat", json={"user_id": "demo-student", "message": "hi"})
+
+    assert res.status_code == 502
+    assert res.json()["detail"] == "Your OpenAI account has no credits left."
+
+
 def test_chat_rejects_empty_message(client):
     res = client.post("/api/chat", json={"user_id": "demo-student", "message": ""})
 

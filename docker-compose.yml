@@ -1,6 +1,6 @@
 # Runs the whole system: the Hindsight memory server + the LearnLoop app.
 #
-#   1. cp .env.example .env   and put your OPENAI_API_KEY in it
+#   1. cp .env.example .env   and pick Option A (OpenAI) or Option B (Ollama) in it
 #   2. docker compose up --build
 #   3. open http://localhost:8000 (app) and http://localhost:9999 (Hindsight's memory explorer)
 
@@ -10,15 +10,18 @@ services:
     ports:
       - "8888:8888" # Hindsight API
       - "9999:9999" # Hindsight UI: browse banks, facts, entities and observations
+    # Hindsight uses an LLM internally to extract facts on retain and to reason on reflect.
+    # Which one (OpenAI or Ollama) is set by the HINDSIGHT_API_LLM_* lines in .env.
+    env_file: .env
     environment:
-      # Hindsight uses an LLM internally to extract facts on retain and to reason on reflect.
-      # Reusing the OpenAI key means one key runs the whole project (Hindsight defaults to gpt-5-mini).
-      HINDSIGHT_API_LLM_PROVIDER: openai
       HINDSIGHT_API_LLM_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in .env}
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # lets the container reach Ollama on your computer
     volumes:
       - hindsight-data:/home/hindsight/.pg0 # embedded Postgres; memories survive restarts
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8888/health"]
+      # The image has no curl, so use its Python to call the health endpoint.
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/health', timeout=4)"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -31,6 +34,8 @@ services:
     env_file: .env
     environment:
       LEARNLOOP_HINDSIGHT_URL: http://hindsight:8888 # service name, not localhost, inside the compose network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       hindsight:
         condition: service_healthy
