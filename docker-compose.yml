@@ -1,0 +1,39 @@
+# Runs the whole system: the Hindsight memory server + the LearnLoop app.
+#
+#   1. cp .env.example .env   and put your OPENAI_API_KEY in it
+#   2. docker compose up --build
+#   3. open http://localhost:8000 (app) and http://localhost:9999 (Hindsight's memory explorer)
+
+services:
+  hindsight:
+    image: ghcr.io/vectorize-io/hindsight:${HINDSIGHT_VERSION:-latest}
+    ports:
+      - "8888:8888" # Hindsight API
+      - "9999:9999" # Hindsight UI: browse banks, facts, entities and observations
+    environment:
+      # Hindsight uses an LLM internally to extract facts on retain and to reason on reflect.
+      # Reusing the OpenAI key means one key runs the whole project (Hindsight defaults to gpt-5-mini).
+      HINDSIGHT_API_LLM_PROVIDER: openai
+      HINDSIGHT_API_LLM_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in .env}
+    volumes:
+      - hindsight-data:/home/hindsight/.pg0 # embedded Postgres; memories survive restarts
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8888/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s # first boot downloads embedding models
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      LEARNLOOP_HINDSIGHT_URL: http://hindsight:8888 # service name, not localhost, inside the compose network
+    depends_on:
+      hindsight:
+        condition: service_healthy
+
+volumes:
+  hindsight-data:

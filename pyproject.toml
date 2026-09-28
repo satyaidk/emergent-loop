@@ -1,0 +1,21 @@
+[project]
+name = "learnloop"
+version = "0.1.0"
+description = "An AI programming tutor with long-term memory, built on Hindsight and OpenAI."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/F: errors, I: import order, UP: modern syntax, B: likely bugs
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's Path()/Query() defaults are the framework's intended style.
+extend-immutable-calls = ["fastapi.Path", "fastapi.Query"]

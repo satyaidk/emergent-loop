@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LearnLoop Tutor</title>
+  <style>
+    :root {
+      --bg: #f6f5f1; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a64; --line: #e3e1da;
+      --accent: #2f6b4f; --accent-ink: #ffffff; --you: #e9f1ec; --memory: #fbf6e6; --warn: #9a3b21;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151513; --panel: #1e1e1b; --ink: #ecebe6; --muted: #9c9a92; --line: #33322e;
+        --accent: #7cc39e; --accent-ink: #10231a; --you: #20302a; --memory: #2a2719; --warn: #f0937a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    header h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+    header h1 span { color: var(--accent); }
+    header label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+    input[type=text], textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+    #status { margin-left: auto; font-size: 13px; color: var(--muted); }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px 20px; max-width: 1200px; margin: 0 auto; height: calc(100vh - 64px); }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+    #log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .msg.user { align-self: flex-end; background: var(--you); }
+    .msg.assistant { align-self: flex-start; border: 1px solid var(--line); }
+    .msg.error { align-self: center; color: var(--warn); font-size: 14px; }
+    form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+    form textarea { flex: 1; resize: none; height: 46px; }
+    button { font: inherit; border: 0; border-radius: 8px; padding: 8px 16px; background: var(--accent); color: var(--accent-ink); cursor: pointer; font-weight: 600; }
+    button:disabled { opacity: 0.5; cursor: progress; }
+    button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+    aside { padding: 16px; overflow-y: auto; gap: 12px; }
+    aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 4px 0 0; }
+    .memory { background: var(--memory); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
+    .memory small { display: block; color: var(--muted); margin-top: 2px; }
+    .empty { color: var(--muted); font-size: 14px; }
+    #report ul { margin: 4px 0 10px; padding-left: 18px; }
+    #report h3 { font-size: 14px; margin: 10px 0 0; }
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; height: auto; padding: 12px 16px; }
+      #chat { height: 70vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Learn<span>Loop</span></h1>
+    <label>Learner ID <input id="userId" type="text" value="demo-student" size="14" /></label>
+    <label><input id="useMemory" type="checkbox" checked /> Long-term memory</label>
+    <span id="status">checking memory service…</span>
+  </header>
+
+  <main>
+    <section class="panel" id="chat">
+      <div id="log"><p class="empty">Ask the tutor anything about programming. Try a new learner ID to see how it behaves with no memory.</p></div>
+      <form id="form">
+        <textarea id="input" placeholder="e.g. Why does my Python loop skip the last item?" required></textarea>
+        <button id="send">Send</button>
+      </form>
+    </section>
+
+    <aside class="panel">
+      <h2>Memories used for the last reply</h2>
+      <div id="memories"><p class="empty">None yet.</p></div>
+      <h2>Progress report</h2>
+      <button class="ghost" id="reportBtn">Generate from memory</button>
+      <div id="report"></div>
+    </aside>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let history = []; // short-term memory: this browser tab's conversation
+
+    function addMessage(role, text) {
+      const log = $("log");
+      log.querySelector(".empty")?.remove();
+      const div = document.createElement("div");
+      div.className = `msg ${role}`;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderMemories(memories) {
+      const box = $("memories");
+      box.replaceChildren();
+      if (!memories.length) {
+        box.innerHTML = '<p class="empty">No relevant memories were found.</p>';
+        return;
+      }
+      for (const m of memories) {
+        const div = document.createElement("div");
+        div.className = "memory";
+        div.textContent = m.text;
+        const meta = document.createElement("small");
+        meta.textContent = [m.type, m.occurred_at?.slice(0, 10)].filter(Boolean).join(" · ");
+        div.appendChild(meta);
+        box.appendChild(div);
+      }
+    }
+
+    function renderList(title, items) {
+      if (!items.length) return [];
+      const h = document.createElement("h3"); h.textContent = title;
+      const ul = document.createElement("ul");
+      for (const item of items) { const li = document.createElement("li"); li.textContent = item; ul.appendChild(li); }
+      return [h, ul];
+    }
+
+    $("userId").addEventListener("change", () => {
+      history = [];
+      $("log").innerHTML = '<p class="empty">New learner selected. Conversation cleared.</p>';
+    });
+
+    $("input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("form").requestSubmit(); }
+    });
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = $("input").value.trim();
+      if (!message) return;
+      $("input").value = "";
+      $("send").disabled = true;
+      addMessage("user", message);
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: $("userId").value.trim(), message, history, use_memory: $("useMemory").checked }),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail?.[0]?.msg ?? res.statusText);
+        const data = await res.json();
+        addMessage("assistant", data.reply);
+        renderMemories(data.memories_used);
+        if (!data.memory_available) addMessage("error", "Memory service is unreachable, so this reply wasn't personalised.");
+        history.push({ role: "user", content: message }, { role: "assistant", content: data.reply });
+      } catch (err) {
+        addMessage("error", `Something went wrong: ${err.message}`);
+      } finally {
+        $("send").disabled = false;
+        $("input").focus();
+      }
+    });
+
+    $("reportBtn").addEventListener("click", async () => {
+      const btn = $("reportBtn");
+      btn.disabled = true; btn.textContent = "Reflecting…";
+      const box = $("report");
+      box.replaceChildren();
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent($("userId").value.trim())}/report`);
+        if (!res.ok) throw new Error(res.statusText);
+        const r = await res.json();
+        const p = document.createElement("p"); p.textContent = r.summary;
+        box.append(p, ...renderList("Strengths", r.strengths), ...renderList("Struggles", r.struggles), ...renderList("Study next", r.next_topics));
+      } catch (err) {
+        const p = document.createElement("p"); p.className = "empty";
+        p.textContent = `Couldn't build a report: ${err.message}`;
+        box.appendChild(p);
+      } finally {
+        btn.disabled = false; btn.textContent = "Generate from memory";
+      }
+    });
+
+    fetch("/healthz").then((r) => r.json()).then((h) => {
+      $("status").textContent = h.memory ? "● memory online" : "● memory offline (replies won't be personalised)";
+      $("status").style.color = h.memory ? "var(--accent)" : "var(--warn)";
+    }).catch(() => { $("status").textContent = "● server unreachable"; });
+  </script>
+</body>
+</html>
