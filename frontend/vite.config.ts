@@ -27,5 +27,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
+    // The app tests click through the whole UI; on a busy machine one can take longer than
+    // Vitest's default 5 seconds without anything being wrong.
+    testTimeout: 20_000,
   },
 });

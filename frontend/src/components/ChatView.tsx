@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { Menu, PanelLeftOpen } from "lucide-react";
+import { Menu, PanelLeftOpen, SquarePen } from "lucide-react";
 import { api } from "../lib/api";
 import { useAppState } from "../lib/AppState";
 import type { MemoryStatus } from "../lib/memoryStatus";
@@ -15,11 +15,20 @@ interface Props {
   model: string | null;
   sidebarCollapsed: boolean;
   onOpenSidebar: () => void;
+  onNewChat: () => void;
   onOpenMemory: () => void;
   inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
-export function ChatView({ memory, model, sidebarCollapsed, onOpenSidebar, onOpenMemory, inputRef }: Props) {
+export function ChatView({
+  memory,
+  model,
+  sidebarCollapsed,
+  onOpenSidebar,
+  onNewChat,
+  onOpenMemory,
+  inputRef,
+}: Props) {
   const { state, dispatch, activeConversation, send, retry, stop } = useAppState();
   const { settings } = state;
   const messages = activeConversation?.messages ?? [];
@@ -37,6 +46,11 @@ export function ChatView({ memory, model, sidebarCollapsed, onOpenSidebar, onOpe
         >
           {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <Menu size={20} />}
         </button>
+        {sidebarCollapsed && (
+          <button type="button" className={styles.iconButton} onClick={onNewChat} aria-label="New chat">
+            <SquarePen size={19} />
+          </button>
+        )}
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>{activeConversation?.title ?? "New chat"}</h1>
           {model && <span className={styles.model}>{model}</span>}

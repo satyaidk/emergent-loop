@@ -77,7 +77,11 @@ export default function App() {
           memory={memory}
           model={server.info?.model ?? null}
           sidebarCollapsed={collapsed}
-          onOpenSidebar={() => (collapsed ? setCollapsed(false) : setDrawerOpen(true))}
+          onOpenSidebar={() => {
+            setCollapsed(false);
+            if (isSmallScreen()) setDrawerOpen(true);
+          }}
+          onNewChat={newChat}
           onOpenMemory={() => setDialog("memory")}
           inputRef={inputRef}
         />
