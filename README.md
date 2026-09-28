@@ -189,8 +189,8 @@ The design decisions, the alternatives that were considered and the known risks 
 You need **Docker Desktop**, and either **[Ollama](https://ollama.com)** (free, local) or an OpenAI API key.
 
 ```bash
-git clone https://github.com/satyaidk/emergent-loop.git
-cd emergent-loop
+git clone https://github.com/satyaidk/learnloop.git
+cd learnloop
 ollama pull qwen3:4b-instruct        # skip if you use OpenAI
 cp .env.example .env                 # pick the Ollama or OpenAI option inside
 docker compose up --build
