@@ -8,6 +8,12 @@
   overflow: hidden;
 }
 
+/* With the sidebar hidden there is only one column. Without this rule the chat would slide
+   into the sidebar's narrow "auto" column and leave the rest of the window empty. */
+.app[data-collapsed="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .content {
   display: flex;
   flex-direction: column;

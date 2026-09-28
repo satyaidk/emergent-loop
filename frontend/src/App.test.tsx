@@ -100,6 +100,17 @@ describe("LearnLoop app", () => {
     expect(screen.getByRole("heading", { level: 2, name: "What are we learning today?" })).toBeInTheDocument();
   });
 
+  it("hides the sidebar, keeps New chat in the header, and shows the sidebar again", async () => {
+    renderApp();
+
+    await userEvent.click(screen.getByRole("button", { name: "Hide chats" }));
+    expect(screen.queryByRole("navigation", { name: "Chats" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New chat" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Show chats" }));
+    expect(screen.getByRole("navigation", { name: "Chats" })).toBeInTheDocument();
+  });
+
   it("the memory button in the message box turns memory off for the next question", async () => {
     renderApp();
 
