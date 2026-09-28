@@ -1,174 +1,238 @@
-# LearnLoop: an AI tutor that remembers you
+<p align="center">
+  <img src="frontend/public/favicon.svg" width="72" alt="LearnLoop logo" />
+</p>
 
-LearnLoop is a programming tutor for beginners that **learns about each student over time**.
-It remembers what you struggled with last week, what project you're building and how you like
-things explained, then uses that to personalise every answer and to write you a progress report.
+<h1 align="center">LearnLoop</h1>
 
-Long-term memory is powered by [Hindsight](https://github.com/vectorize-io/hindsight), an agent
-memory system, instead of plain chat history or a basic RAG vector store. The tutor's reasoning is
-powered by any OpenAI-compatible model: OpenAI's `gpt-5-mini`, or a free model running on your own
-computer with [Ollama](https://ollama.com).
+<p align="center">
+  <strong>An AI programming tutor that remembers you.</strong><br />
+  It keeps notes on what you practise, where you get stuck and how you like to learn,<br />
+  so every conversation picks up where the last one left off.
+</p>
+
+<p align="center">
+  <a href="https://github.com/satyaidk/emergent-loop/actions/workflows/ci.yml"><img src="https://github.com/satyaidk/emergent-loop/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
+  <img src="https://img.shields.io/badge/FastAPI-server-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React_19-TypeScript-3178C6?logo=react&logoColor=white" alt="React 19 with TypeScript" />
+  <img src="https://img.shields.io/badge/memory-Hindsight-2F6B4F" alt="Memory by Hindsight" />
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#features">Features</a> ·
+  <a href="docs/GETTING_STARTED.md">Run it</a> ·
+  <a href="docs/DESIGN.md">Design doc</a>
+</p>
+
+![LearnLoop answering with a code example, showing the notes about the learner that it used](docs/images/chat-light.png)
+
+## What is LearnLoop?
+
+Most AI chat tools forget you the moment a conversation ends. Ask about recursion today, come back next
+week, and you start from zero: it doesn't know what confused you, what you already mastered or what
+you're building.
+
+LearnLoop works like a good teacher with a notebook. **Before answering, it reads its notes about you.
+After you talk, it writes new ones.** Those notes shape every answer: it skips what you know, revisits
+what tripped you up, and explains things the way you learn best.
 
 ```
-You (3 weeks ago): "My factorial function crashes with RecursionError..."
-You (today):       "Can you give me something to practise?"
-LearnLoop:         "Last time recursion base cases tripped you up, so let's do one short
-                    exercise on that. Here's a 4-line example you can run..."
+You (two weeks ago): "My factorial function crashes with RecursionError."
+You (today, in a brand-new chat):  "Can you give me something to practise?"
+LearnLoop:  "Last time the base case tripped you up, so here's one short exercise on exactly that..."
 ```
 
-The web app is a React + TypeScript chat interface in the style of other AI chat tools:
+## What makes it different
 
-- **Chats** in a sidebar, grouped by date, with search, rename and delete. New chat: `Ctrl + Shift + O`.
-- **Replies** rendered as Markdown with highlighted code blocks and a Copy button; Stop, Retry and Regenerate.
-- **Memory you can see**: the notes a reply used appear under it like highlighter marks. A memory
-  window lists everything LearnLoop remembers and writes a progress report.
-- **Settings**: light/dark/system theme, text size, Enter-to-send, learner profile, memory on/off,
-  how much of the chat to send along, and export/import/delete for your chats.
-- **No chat database, by design**: chats and settings live in your browser's local storage, until you
-  delete them or clear your browser data. Long-term memory is separate and lives in Hindsight.
+**Memory, not transcripts.** Most "memory" in chat apps means replaying old messages, or searching them
+for similar-looking text (known as RAG). LearnLoop uses [Hindsight](https://github.com/vectorize-io/hindsight),
+an agent memory system that turns conversations into **facts about the learner**, links them by topic
+and time, and merges them into longer-lasting observations.
 
-## Why memory instead of chat history or RAG?
-
-| Approach | What the agent knows next week | Problem |
+| Approach | What the tutor knows next week | The catch |
 |---|---|---|
-| **Chat history** | Only the current conversation | Forgets everything when the tab closes; history grows until it no longer fits in the context window |
-| **RAG (vector search over old chats)** | Chunks of text that *look similar* to the question | Retrieves raw transcripts, not facts. "What did I struggle with?" doesn't look like "RecursionError: maximum depth exceeded" |
-| **Hindsight memory** | Extracted facts, entities, timelines and consolidated observations | Needs a memory server and uses extra LLM calls in the background |
+| Chat history | Only the current conversation | Forgotten when the chat ends; grows until it no longer fits the model |
+| RAG over old chats | Chunks of old text that *look* similar to the question | "What did I struggle with?" doesn't look like "RecursionError: maximum depth exceeded" |
+| **LearnLoop (Hindsight)** | Facts, timelines and patterns about *you* | Needs a memory service and some background processing |
 
-Hindsight turns each conversation into structured facts (*"learner struggled with recursion base
-cases, 14 days ago"*). It then retrieves them with four strategies in parallel (semantic, keyword,
-entity graph, temporal) and can **reflect** across all of them to answer questions like *"what
-should this learner study next?"*
+**Memory you can see and control.** Replies show which notes they used, highlighted like a student's
+highlighter pen. A memory window lists everything LearnLoop knows about you, and one button deletes it.
+
+**Free and private, on your own computer.** LearnLoop runs on a local model through
+[Ollama](https://ollama.com): no account, no API key, no cost, and your conversations don't leave your
+machine. OpenAI works too, with one setting.
+
+**Built like production software.** A layered, tested Python server; a typed React web app; 74
+automated tests; continuous integration; one-command Docker setup; and graceful handling of every
+service that can fail.
+
+## Features
+
+**Learning**
+- Explanations with small runnable code examples, followed by a quick question to check understanding
+- A **progress report**, written from memory: your strengths, what you struggle with, and what to study next
+- A welcome screen that shows what LearnLoop already remembers, plus starter questions
+
+**Memory**
+- Long-term memory for each learner, kept in its own Hindsight *bank* so learners never see each other's notes
+- Recall before every answer; new notes are written in the background, so you never wait for them
+- "Used 3 notes about you" under each reply, a searchable list of every note, and one-click deletion
+- Short-term memory: recent messages of the current chat, with an adjustable amount
+- A memory on/off switch right in the message box
+
+**Chat**
+- Multiple chats in a sidebar, grouped by date, with search, rename and delete
+- Markdown replies with syntax-highlighted code and a Copy button
+- Stop, Try again and Regenerate; Enter to send, Shift + Enter for a new line, Ctrl + Shift + O for a new chat
+- Light, dark and system themes, three text sizes, and a layout that works on phones
+
+**Your data**
+- Chats and settings are saved in your browser, with export and import for backups
+- Learner IDs let one person keep separate profiles, or several people share a computer
+- Clearing your browser removes chats but not LearnLoop's notes; each has its own delete button
+
+## How it works
+
+Every question runs the same loop: **recall, think, reply, retain.**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Web app (browser)
+    participant S as LearnLoop server
+    participant H as Hindsight (memory)
+    participant M as Model (Ollama or OpenAI)
+    B->>S: Question + recent messages of this chat
+    S->>H: Recall notes relevant to the question
+    H-->>S: Facts and observations about this learner
+    S->>M: Tutor instructions + notes + recent messages + question
+    M-->>S: Answer
+    S-->>B: Answer + the notes it used
+    S--)H: Retain this exchange (in the background)
+    Note over H: Extracts new facts and merges them into observations
+```
+
+1. **Recall.** Hindsight searches the learner's notes four ways at once (meaning, keywords, linked
+   topics and time) and ranks the results for this exact question.
+2. **Think.** The model gets tutoring instructions, the relevant notes and the recent messages of the
+   current chat. Notes are passed as data, never as instructions, which guards against prompt injection.
+3. **Reply.** The answer goes back to the browser together with the notes it used, so the learner can
+   see why it's personal.
+4. **Retain.** The exchange is handed to Hindsight in the background. It extracts durable facts, such as
+   "struggles with recursion base cases", and folds them into what it already knows.
+
+LearnLoop keeps two kinds of memory, in two places:
+
+| | Short-term memory | Long-term memory |
+|---|---|---|
+| **What** | The recent messages of the current chat | Facts about the learner, across every chat |
+| **Where** | Your browser | Hindsight, on the server |
+| **Deleted when** | You delete the chat or clear browser data | You press **Delete notes** in Settings |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI[React web app<br/>frontend/, chats in localStorage] -->|POST /api/chat| API[FastAPI<br/>main.py]
-    API --> Coach[CoachService<br/>coach.py]
-    Coach -->|1. recall| Mem[(Hindsight<br/>one bank per learner)]
-    Coach -->|2. prompt with memories| LLM[OpenAI or Ollama<br/>llm.py]
-    Coach -->|3. retain exchange, async| Mem
-    API -->|GET /report → reflect| Mem
+    subgraph Browser
+        UI["React web app<br/>chats saved in local storage"]
+    end
+    subgraph Server["Docker Compose"]
+        API["LearnLoop server<br/>FastAPI"]
+        HS[("Hindsight<br/>one bank per learner")]
+    end
+    LLM["Model<br/>Ollama (local) or OpenAI"]
+    UI -- "HTTP /api" --> API
+    API -- "recall, retain, reflect" --> HS
+    API -- "chat completions" --> LLM
+    HS -- "fact extraction" --> LLM
 ```
 
-Each chat turn runs **recall → think → reply → retain**:
+| Layer | Technology | Role |
+|---|---|---|
+| Web app | React 19, TypeScript, Vite | Chat interface, settings, local storage |
+| Server | Python 3.11, FastAPI, Pydantic | The recall, think, reply, retain loop; validation; the API |
+| Memory | [Hindsight](https://github.com/vectorize-io/hindsight) | Fact extraction, multi-strategy recall, reflection |
+| Model | Ollama (`qwen3:4b-instruct`) or OpenAI (`gpt-5-mini`) | Answers, through one OpenAI-compatible client |
+| Delivery | Docker Compose, multi-stage Dockerfile | One command starts everything |
+| Quality | pytest, Vitest, Testing Library, ruff, oxlint, GitHub Actions | 74 tests, linting and builds on every push |
 
-1. **Recall**: fetch memories relevant to the learner's message from *their* bank.
-2. **Think**: the model receives long-term memory (in the system prompt) plus short-term memory (recent turns of the current chat, sent by the browser).
-3. **Reply**: the answer goes back to the browser, along with the memories that were used, for transparency.
-4. **Retain**: the exchange is stored asynchronously, so the learner never waits on memory extraction.
+The design decisions, the alternatives that were considered and the known risks are in the
+[design doc](docs/DESIGN.md).
 
-Design decisions, alternatives and trade-offs are in [docs/DESIGN.md](docs/DESIGN.md).
+## Screenshots
+
+| Dark mode | What LearnLoop remembers |
+|---|---|
+| ![A reply in dark mode](docs/images/chat-dark.png) | ![The memory window listing notes about the learner](docs/images/memory.png) |
+| **Settings** | **On a phone** |
+| ![The Memory tab in Settings](docs/images/settings.png) | ![The welcome screen and the chat list on a phone](docs/images/mobile.png) |
+
+## Engineering highlights
+
+- **Testable by design.** The server talks to memory and to the model through small interfaces.
+  Tests swap in fakes, so 35 server tests run in seconds with no network, key or model.
+- **Graceful degradation.** If the memory service is down, the tutor still answers (without
+  personalisation) and says so. If the model is unreachable, the web app shows the real reason and a
+  retry button. A missing key stops startup with a clear message.
+- **Security basics.** Learner IDs are validated before they touch storage; memories are escaped and
+  delimited in prompts; replies are rendered without raw HTML; the container runs as a non-root user.
+- **A considered web app.** One reducer for every state change, a versioned storage format, and code
+  splitting that cut the first download from 593 KB to 271 KB. Keyboard and screen-reader friendly.
+- **Tested like a user.** 39 web app tests type into the real interface against a fake server.
+- **Continuous integration.** Lint, type checks, tests, a production build and a Docker build run on
+  every push and pull request.
 
 ## Quick start
 
-You need **Docker Desktop**, plus one of these for the AI model:
-
-- **Option A, OpenAI (paid):** an [OpenAI API key](https://platform.openai.com/api-keys) with credits.
-- **Option B, Ollama (free, runs on your computer):** install [Ollama](https://ollama.com), then run
-  `ollama pull qwen3:4b-instruct` (about 2.5 GB). No account or key needed.
+You need **Docker Desktop**, and either **[Ollama](https://ollama.com)** (free, local) or an OpenAI API key.
 
 ```bash
-cp .env.example .env          # then follow Option A or Option B inside it
+git clone https://github.com/satyaidk/emergent-loop.git
+cd emergent-loop
+ollama pull qwen3:4b-instruct        # skip if you use OpenAI
+cp .env.example .env                 # pick the Ollama or OpenAI option inside
 docker compose up --build
 ```
 
-With Ollama, answers depend on your hardware: expect a few seconds to a minute per reply on a laptop,
-and a small model gives simpler answers than `gpt-5-mini`.
+Open **http://localhost:8000**. The full guide, with development mode, the API reference, tests and
+troubleshooting tips, is in **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**.
 
-- App: http://localhost:8000
-- API docs (auto-generated, interactive): http://localhost:8000/docs
-- Hindsight memory explorer: http://localhost:9999
+## Documentation
 
-The Docker build also builds the React app (see the two stages in `Dockerfile`), so there's nothing
-else to install. Give the demo learner some history, then chat as `demo-student` and open
-**What LearnLoop remembers** from the sidebar:
+| Guide | What's inside |
+|---|---|
+| [Getting started](docs/GETTING_STARTED.md) | Installing, running and developing; API reference; tests; costs |
+| [Design doc](docs/DESIGN.md) | Goals, alternatives considered, failure modes and risks |
+| [Web app guide](docs/FRONTEND.md) | How the React app is organised, file by file |
+| [Learning path](docs/LEARNING_PATH.md) | A step-by-step plan to understand and extend the project |
 
-```bash
-docker compose exec app python -m scripts.seed_demo
-```
-
-### Local development (hot reload)
-
-Changing the web app: keep the Docker stack running (it serves the API on :8000) and start Vite,
-which reloads the page on every save and forwards `/api` calls to :8000:
-
-```bash
-cd frontend
-npm install
-npm run dev        # open http://localhost:5173
-```
-
-Changing the Python server: run Hindsight in Docker and the API on your machine (Windows shown;
-use `source .venv/bin/activate` on macOS/Linux):
-
-```powershell
-docker compose up hindsight -d
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload
-```
-
-`npm run build` in `frontend/` writes the production web app into `app/static/`, which FastAPI serves
-at http://localhost:8000. A guide to the web app's code is in [docs/FRONTEND.md](docs/FRONTEND.md).
-
-## API
-
-| Method | Path | What it does |
-|---|---|---|
-| `POST` | `/api/chat` | Chat turn. Body: `user_id`, `message`, optional `history`, `use_memory` |
-| `GET` | `/api/users/{user_id}/memories` | Everything the tutor remembers about a learner (`?q=` ranks by relevance instead) |
-| `DELETE` | `/api/users/{user_id}/memories` | Delete a learner's long-term memory |
-| `GET` | `/api/users/{user_id}/report` | Structured progress report built with Hindsight `reflect` |
-| `GET` | `/api/info` | Server facts the web app shows: version, model, history limit |
-| `GET` | `/healthz` | Liveness, plus whether the memory service is reachable |
-
-## Quality
-
-```bash
-pytest -q                     # 35 server tests, run offline using fakes (no API key, no server)
-ruff check . && ruff format --check .
-python -m scripts.eval_memory # measures reply quality with memory ON vs OFF (needs the live stack)
-
-cd frontend
-npm test                      # 38 web app tests (Vitest + Testing Library), with a fake server
-npm run lint && npm run typecheck
-```
-
-CI (`.github/workflows/ci.yml`) runs all of it, plus a production build and a Docker build, on every push.
-
-**Resilience:** if Hindsight is down, the tutor still answers without personalisation, and the UI
-tells the user. If OpenAI is down, the API returns a clear `502` instead of crashing. If the API key
-is missing, the app refuses to start and says so.
-
-## Project layout
+## Project structure
 
 ```
-app/
-  main.py      HTTP routes, app factory, dependency wiring
-  coach.py     The agent loop: recall → think → reply → retain; progress reports
-  memory.py    MemoryStore interface + Hindsight implementation (one bank per learner)
-  llm.py       LLM interface + OpenAI implementation
-  prompts.py   Prompt templates (memories are escaped to resist prompt injection)
-  schemas.py   Validated request/response models
-  config.py    Typed settings from environment variables
-  static/      The built web app (generated by `npm run build`; not in git)
-frontend/      React + TypeScript web app (Vite); see docs/FRONTEND.md
-tests/         Unit + API tests with fake memory and LLM
-scripts/       Demo seeding and the memory-vs-no-memory evaluation
-docs/          Design doc, web app guide and learning path
+app/          Python server: API routes, the tutoring loop, memory and model clients
+frontend/     React + TypeScript web app
+tests/        Server tests (the web app's tests sit next to its code in frontend/src)
+scripts/      Demo data and the memory-on vs memory-off evaluation
+docs/         Guides, design doc and screenshots
 ```
 
-## Cost
+## Limitations and roadmap
 
-With Ollama (Option B) everything runs on your computer and costs nothing.
+- **No user accounts yet.** A learner ID is trusted as given: fine on your own computer, but
+  authentication comes before any public deployment.
+- **Chats stay in one browser.** They don't sync between devices; export and import cover backups.
+- **Replies aren't streamed yet.** On a small local model, a reply can take up to a minute or two while
+  memory is being written.
 
-With OpenAI (Option A), every chat turn is one OpenAI call for the reply plus background calls inside
-Hindsight to extract facts (also on `gpt-5-mini` by default). The eval script makes about 10 OpenAI
-calls. Set a monthly budget limit in your OpenAI account settings while you experiment.
-`LEARNLOOP_EFFORT=minimal` gives cheaper, faster replies.
+Next up: streaming replies, authentication, an LLM-judged evaluation of memory quality, and a hosted
+demo. See the [learning path](docs/LEARNING_PATH.md) for the full plan.
+
+## Acknowledgements
+
+Long-term memory by [Hindsight](https://github.com/vectorize-io/hindsight) from Vectorize. Local models
+through [Ollama](https://ollama.com), running Qwen by Alibaba. Code highlighting by highlight.js; icons by Lucide.
 
 ## License
 
