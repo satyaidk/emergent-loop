@@ -12,11 +12,13 @@ Each learner gets their own Hindsight *bank*, so memories never leak between use
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from hindsight_client import Hindsight
+from hindsight_client_api.exceptions import NotFoundException
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,16 @@ def bank_id_for(user_id: str, prefix: str) -> str:
     return f"{prefix}-{user_id}"
 
 
+# Hindsight appends annotations to a fact, e.g. "... | When: 2026-09-28 | Involving: user (learner)".
+# They help the model (so the prompt keeps them) but read as clutter to a person.
+_ANNOTATIONS = re.compile(r"\s+\|\s+(?:When|Involving|Where|Who|Why|How|Context):.*$", re.IGNORECASE | re.DOTALL)
+
+
+def display_text(text: str) -> str:
+    """A fact as a person should read it: annotations removed."""
+    return _ANNOTATIONS.sub("", text).strip()
+
+
 @dataclass
 class Memory:
     text: str
@@ -57,6 +69,10 @@ class MemoryStore(Protocol):
     async def remember(self, user_id: str, content: str, context: str) -> None: ...
 
     async def recall(self, user_id: str, query: str) -> list[Memory]: ...
+
+    async def list_all(self, user_id: str, limit: int = 100) -> list[Memory]: ...
+
+    async def forget(self, user_id: str) -> None: ...
 
     async def reflect(self, user_id: str, question: str, schema: dict[str, Any] | None = None) -> Reflection: ...
 
@@ -107,6 +123,25 @@ class HindsightMemoryStore:
             max_tokens=self.recall_max_tokens,
         )
         return [Memory(text=r.text, type=r.type, occurred_at=r.occurred_start) for r in response.results]
+
+    async def list_all(self, user_id: str, limit: int = 100) -> list[Memory]:
+        """Everything stored for a learner, newest first (unlike recall, which ranks by relevance)."""
+        bank_id = await self._ensure_bank(user_id)
+        response = await self.client.alist_memories(bank_id=bank_id, limit=limit)
+        return [
+            Memory(text=item.text, type=item.fact_type, occurred_at=item.occurred_start or item.mentioned_at)
+            for item in response.items
+            if item.text and item.state != "invalidated"
+        ]
+
+    async def forget(self, user_id: str) -> None:
+        """Delete the learner's whole bank. The next chat starts a fresh one."""
+        bank_id = self.bank_id(user_id)
+        try:
+            await self.client.adelete_bank(bank_id)
+        except NotFoundException:
+            pass  # never chatted, so there is nothing to forget
+        self._configured_banks.discard(bank_id)
 
     async def reflect(self, user_id: str, question: str, schema: dict[str, Any] | None = None) -> Reflection:
         bank_id = await self._ensure_bank(user_id)

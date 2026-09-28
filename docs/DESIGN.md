@@ -27,6 +27,7 @@ turn and still loses everything between sessions.
 - User accounts and authentication. `user_id` is trusted as given (see Risks).
 - Horizontal scaling, multi-region, SLAs.
 - Streaming responses.
+- Server-side chat storage and sync between devices (chats live in the browser; see 4.5).
 
 ## 3. Alternatives considered
 
@@ -66,6 +67,26 @@ logic in `coach.py` never imports a vendor SDK.
 | OpenAI unreachable, bad key or rate limited | SDK retries 429/5xx; then `502` with a clear message |
 | Model refuses the request | A polite canned reply asking the learner to rephrase |
 | Report or memories endpoint with Hindsight down | `503` |
+
+### 4.5 Web app and where chats are stored
+The web app is a React + TypeScript single-page app (Vite), built into `app/static/` and served by
+FastAPI from the same origin, so there is no CORS setup and one Docker image ships everything.
+
+Chat transcripts are stored **in the browser (localStorage)**, not on the server:
+
+| Option | Pros | Cons | Decision |
+|---|---|---|---|
+| **localStorage** | No database to run; private to the device; instant | ~5 MB per site; lost if the learner clears site data; no sync between devices | **Chosen** for v0.1: fits a single-user learning project |
+| IndexedDB | Much larger quota; async | More code for the same small data; still one device only | Worth it once chats outgrow ~5 MB |
+| Server database (e.g. Postgres) | Sync across devices; backups | Needs accounts and auth first (a non-goal), plus migrations | The step to take with authentication |
+
+Two consequences are deliberate and shown in the UI: clearing the browser deletes chats but **not**
+long-term memory (which lives in Hindsight), and **Export/Import** gives learners a manual backup.
+The stored state carries a `version` number so a later release can migrate it. A reply still
+pending when the tab closed is loaded as "stopped" rather than hanging forever.
+
+Short-term memory (the recent turns of the current chat) is sent by the browser with each question,
+capped by the learner's setting and by the server's `max_history_messages`.
 
 ## 5. Risks
 

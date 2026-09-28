@@ -40,6 +40,14 @@ class MemoriesResponse(BaseModel):
     memories: list[MemoryOut]
 
 
+class AppInfo(BaseModel):
+    """Read-only server facts the web app shows in Settings."""
+
+    version: str = "0.1.0"
+    model: str
+    max_history_messages: int
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     memory: bool

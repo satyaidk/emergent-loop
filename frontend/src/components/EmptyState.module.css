@@ -1,0 +1,89 @@
+.empty {
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(32px, 10vh, 96px) 0 24px;
+}
+
+/* The greeting is the page's headline: large, tight, confident. */
+.greeting {
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 3.1rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 36rem;
+  margin: 16px 0 0;
+  color: var(--ink-2);
+  font-size: 1.08rem;
+}
+
+.notes {
+  margin-top: 28px;
+}
+
+.notesTitle {
+  margin: 0 0 8px;
+  color: var(--ink-3);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.notes ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 3px solid var(--highlight-edge);
+  list-style: none;
+}
+
+.notes mark {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--highlight);
+  color: var(--ink);
+  line-height: 1.75;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.starters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starters button {
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  line-height: 1.45;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.starters button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 640px) {
+  .starters {
+    grid-template-columns: 1fr;
+  }
+}

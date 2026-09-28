@@ -8,6 +8,7 @@ from app.coach import CoachService
 from app.config import Settings
 from app.llm import LLMUnavailableError
 from app.main import build_production_dependencies, create_app
+from app.schemas import AppInfo
 from tests.fakes import FakeLLM, FakeMemoryStore
 
 
@@ -17,8 +18,22 @@ def memory():
 
 
 @pytest.fixture
-def client(memory):
-    app = create_app(coach=CoachService(memory, FakeLLM(reply="Hi! Let's learn.")), memory=memory)
+def web_dir(tmp_path):
+    """A stand-in for the built React app (frontend/ builds into app/static)."""
+    (tmp_path / "index.html").write_text("<title>LearnLoop</title><div id=root></div>", encoding="utf-8")
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "app.js").write_text("console.log('hi')", encoding="utf-8")
+    return tmp_path
+
+
+@pytest.fixture
+def client(memory, web_dir):
+    app = create_app(
+        coach=CoachService(memory, FakeLLM(reply="Hi! Let's learn.")),
+        memory=memory,
+        info=AppInfo(model="qwen3:4b-instruct", max_history_messages=12),
+        static_dir=web_dir,
+    )
     with TestClient(app) as c:  # the context manager runs the app's startup/shutdown
         yield c
 
@@ -91,11 +106,78 @@ def test_healthz_reports_degraded_when_memory_is_down(client, memory):
     assert res.json() == {"status": "degraded", "memory": False}
 
 
-def test_index_page_is_served(client):
-    res = client.get("/")
+def test_web_app_and_its_assets_are_served(client):
+    page = client.get("/")
+    script = client.get("/assets/app.js")
+
+    assert page.status_code == 200
+    assert "<div id=root>" in page.text
+    assert script.status_code == 200
+
+
+def test_api_routes_still_win_over_the_web_app(client):
+    res = client.get("/healthz")
+
+    assert res.headers["content-type"].startswith("application/json")
+
+
+def test_explains_how_to_build_when_the_web_app_is_missing(memory, tmp_path):
+    app = create_app(coach=CoachService(memory, FakeLLM()), memory=memory, static_dir=tmp_path / "not-built")
+    with TestClient(app) as c:
+        res = c.get("/")
 
     assert res.status_code == 200
-    assert "LearnLoop" in res.text
+    assert "npm run build" in res.text
+
+
+def test_info_reports_model_and_history_limit(client):
+    res = client.get("/api/info")
+
+    assert res.json() == {"version": "0.1.0", "model": "qwen3:4b-instruct", "max_history_messages": 12}
+
+
+def test_memories_without_a_query_lists_everything(client, memory):
+    memory.banks["demo-student"] = ["Learner is building a todo app", "Learner prefers short examples"]
+
+    res = client.get("/api/users/demo-student/memories")
+
+    assert [m["text"] for m in res.json()["memories"]] == [
+        "Learner is building a todo app",
+        "Learner prefers short examples",
+    ]
+
+
+def test_memories_are_shown_without_annotations_and_without_duplicates(client, memory):
+    memory.banks["demo-student"] = [
+        "Learner is learning Python | When: 2026-09-28 | Involving: user (learner)",
+        "Learner is learning Python | When: 2026-09-29 | Involving: user (Python learner)",
+        "Learner prefers short examples",
+    ]
+
+    res = client.get("/api/users/demo-student/memories")
+
+    texts = [m["text"] for m in res.json()["memories"]]
+    assert texts == ["Learner is learning Python", "Learner prefers short examples"]
+
+
+def test_forget_deletes_every_memory_for_that_learner_only(client, memory):
+    memory.banks["demo-student"] = ["Learner is building a todo app"]
+    memory.banks["other-student"] = ["Other learner likes SQL"]
+
+    res = client.delete("/api/users/demo-student/memories")
+
+    assert res.status_code == 204
+    assert "demo-student" not in memory.banks
+    assert memory.banks["other-student"] == ["Other learner likes SQL"]
+
+
+def test_forget_rejects_unsafe_user_ids(client, memory):
+    memory.banks["demo-student"] = ["Learner is building a todo app"]
+
+    res = client.delete("/api/users/Demo_Student/memories")
+
+    assert res.status_code == 422
+    assert memory.banks["demo-student"] == ["Learner is building a todo app"]
 
 
 def test_startup_fails_fast_without_an_openai_key(monkeypatch):

@@ -76,6 +76,12 @@ class CoachService:
     async def recall(self, user_id: str, query: str) -> list[Memory]:
         return await self._memory.recall(user_id, query)
 
+    async def all_memories(self, user_id: str) -> list[Memory]:
+        return await self._memory.list_all(user_id)
+
+    async def forget(self, user_id: str) -> None:
+        await self._memory.forget(user_id)
+
     async def progress_report(self, user_id: str) -> ProgressReport:
         reflection = await self._memory.reflect(user_id, REPORT_QUESTION, schema=ProgressReport.model_json_schema())
         if reflection.structured:

@@ -39,6 +39,19 @@ Then answer these without looking:
 
 **Learn:** layered architecture, dependency injection, async I/O, input validation, prompt injection.
 
+## Stage 2b: Read the web app (days 4–5)
+
+The chat screen is a React + TypeScript app in `frontend/`. Start with [FRONTEND.md](FRONTEND.md), then
+read `src/lib/state.ts` (every change to the data), `src/lib/AppState.tsx` (saving, sending) and
+`src/components/Composer.tsx` with its test file. Then answer:
+
+1. Where are your chats saved, and where are LearnLoop's notes about you? What happens to each if you clear your browser data?
+2. Why does every change go through one `reducer` function instead of components changing data directly?
+3. What does the **Stop** button actually cancel, and what keeps happening on the server?
+4. Why is the Markdown renderer loaded with `lazy()`? (Hint: run `npm run build` and compare file sizes.)
+
+**Learn:** components and props, state and effects, TypeScript types, browser storage, testing UIs like a user.
+
 ## Stage 3: Build features yourself (weeks 1–4)
 
 Pick them in order. **Write a short design doc first** (copy the format of `DESIGN.md`: problem, options, decision, risks). Add tests for every feature.

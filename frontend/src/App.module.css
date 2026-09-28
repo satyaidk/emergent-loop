@@ -1,0 +1,48 @@
+.app {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  /* Exactly the window's height. Without this the row grows with its content, pushing the
+     message box off screen instead of letting the chat scroll. */
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+
+.content > main {
+  flex: 1;
+  min-height: 0;
+}
+
+.banner {
+  margin: 0;
+  padding: 10px 20px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: block;
+    background: rgba(16, 23, 19, 0.4);
+  }
+}

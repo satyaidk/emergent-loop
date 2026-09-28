@@ -7,3 +7,5 @@ __pycache__
 tests
 docs
 brag-output*/
+frontend/node_modules
+app/static
