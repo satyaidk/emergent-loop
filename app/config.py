@@ -20,14 +20,18 @@ class Settings(BaseSettings):
     recall_budget: str = "mid"  # "low" | "mid" | "high": how hard recall searches
     recall_max_tokens: int = 2000  # cap on how much memory text we put in the prompt
 
-    # --- OpenAI (the tutor's brain) ---
+    # --- The tutor's brain: any OpenAI-compatible API (OpenAI itself, or Ollama on your computer) ---
     # Read from the standard OPENAI_API_KEY variable, not LEARNLOOP_*, so the same
-    # key is shared with the Hindsight container in docker-compose.
+    # key is shared with the Hindsight container in docker-compose. Ollama ignores it,
+    # but the client library still needs some value, so use "ollama" there.
     openai_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("OPENAI_API_KEY", "LEARNLOOP_OPENAI_API_KEY")
     )
+    openai_base_url: str | None = None  # unset = OpenAI; e.g. http://localhost:11434/v1 for Ollama
     openai_model: str = "gpt-5-mini"
-    effort: str = "low"  # "minimal" | "low" | "medium" | "high": trades depth of reasoning for speed and cost
+    # "minimal" | "low" | "medium" | "high" for reasoning models; leave empty for models without a
+    # thinking mode (most small local models), and it won't be sent.
+    effort: str | None = "low"
     max_tokens: int = 16000
 
     # --- Conversation ---
