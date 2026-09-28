@@ -28,6 +28,14 @@ class FakeMemoryStore:
         words = {w.lower().strip("?.,!") for w in query.split() if len(w) > 3}
         return [Memory(text=m) for m in self.banks.get(user_id, []) if words & set(m.lower().split())]
 
+    async def list_all(self, user_id: str, limit: int = 100) -> list[Memory]:
+        if self.fail_recall:
+            raise ConnectionError("hindsight is down")
+        return [Memory(text=m) for m in self.banks.get(user_id, [])][:limit]
+
+    async def forget(self, user_id: str) -> None:
+        self.banks.pop(user_id, None)
+
     async def reflect(self, user_id: str, question: str, schema: dict[str, Any] | None = None) -> Reflection:
         return self.reflect_result
 

@@ -1,0 +1,156 @@
+.body {
+  padding: 8px 24px 24px;
+  overflow-y: auto;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.toolbar > div {
+  border-top: 0;
+}
+
+.who {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.muted {
+  margin: 12px 0;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--ink-3);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+}
+
+.search input {
+  width: 100%;
+  padding: 9px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+}
+
+.count {
+  margin: 12px 0 6px;
+  color: var(--ink-3);
+  font-size: 0.85rem;
+}
+
+/* A notebook page: ruled lines, notes marked with the highlighter. */
+.notes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 0 0 16px;
+  border-left: 3px solid var(--highlight-edge);
+  list-style: none;
+}
+
+.notes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.notes mark {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--highlight);
+  color: var(--ink);
+  line-height: 1.75;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.date {
+  flex: none;
+  color: var(--ink-3);
+  font-size: 0.82rem;
+}
+
+.reportStart {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-s);
+  font-weight: 600;
+}
+
+.primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.report {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.summary {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.reportSection h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.reportSection ul,
+.reportSection ol {
+  margin: 0;
+  padding-left: 1.3em;
+}
+
+.failure {
+  padding: 12px 14px;
+  border-radius: var(--radius-m);
+  background: var(--danger-soft);
+}
+
+.failure p {
+  margin: 0 0 10px;
+}

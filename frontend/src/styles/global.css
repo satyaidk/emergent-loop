@@ -1,0 +1,198 @@
+/*
+  Design tokens. Every colour in the app comes from these variables, so the dark theme is
+  just a second set of values. The idea: a learner's notebook.
+  - paper and ink for the page and text
+  - chalkboard green for LearnLoop itself
+  - highlighter yellow, used ONLY for memories, so "this came from memory" is always recognisable
+*/
+:root {
+  color-scheme: light;
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+  --paper: #f7f8f5;
+  --surface: #ffffff;
+  --sidebar: #eef1ec;
+  --hover: #e4e9e4;
+  --ink: #1c2621;
+  --ink-2: #4a5750;
+  --ink-3: #5f6b64;
+  --line: #d9e0da;
+  --line-strong: #bfc9c2;
+
+  --accent: #2f6b4f;
+  --accent-hover: #24553f;
+  --accent-soft: #e3eee7;
+  --on-accent: #ffffff;
+
+  --highlight: #f6e39a;
+  --highlight-edge: #e2c95c;
+  --danger: #a23b26;
+  --danger-soft: #f8e6e0;
+  --focus: #2f6b4f;
+
+  --code-bg: #f0f3ef;
+  --code-keyword: #8a3ffc;
+  --code-string: #2f6b4f;
+  --code-number: #b35a00;
+  --code-comment: #6b7770;
+  --code-title: #1f5aa8;
+  --code-attr: #9a3b21;
+
+  --shadow-pop: 0 18px 50px rgba(28, 38, 33, 0.18), 0 2px 6px rgba(28, 38, 33, 0.08);
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+}
+
+/* Dark theme: a chalkboard rather than generic grey. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #141c18;
+  --surface: #19231e;
+  --sidebar: #101713;
+  --hover: #22302a;
+  --ink: #e3ebe6;
+  --ink-2: #b4c1b9;
+  --ink-3: #93a19a;
+  --line: #2a3831;
+  --line-strong: #3b4c43;
+
+  --accent: #7cc39e;
+  --accent-hover: #95d3b1;
+  --accent-soft: #1f3329;
+  --on-accent: #0e1a13;
+
+  --highlight: rgba(233, 211, 118, 0.26);
+  --highlight-edge: rgba(233, 211, 118, 0.55);
+  --danger: #f0937a;
+  --danger-soft: #3a211b;
+  --focus: #95d3b1;
+
+  --code-bg: #0e1511;
+  --code-keyword: #c4a7ff;
+  --code-string: #8fd4ad;
+  --code-number: #f2b872;
+  --code-comment: #7f8f87;
+  --code-title: #8ab8ff;
+  --code-attr: #f0a58f;
+
+  --shadow-pop: 0 18px 50px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Text size setting scales everything that uses rem. */
+html {
+  font-size: 100%;
+}
+html[data-text-size="small"] {
+  font-size: 93.75%;
+}
+html[data-text-size="large"] {
+  font-size: 112.5%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1rem/1.6 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--highlight);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Syntax colours for code blocks (class names come from highlight.js via rehype-highlight). */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-built_in,
+.hljs-type {
+  color: var(--code-keyword);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-template-string,
+.hljs-addition {
+  color: var(--code-string);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--code-number);
+}
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--code-comment);
+  font-style: italic;
+}
+.hljs-title,
+.hljs-section,
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: var(--code-title);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-params,
+.hljs-deletion {
+  color: var(--code-attr);
+}
