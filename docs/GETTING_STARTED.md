@@ -27,6 +27,12 @@ and a small model gives simpler answers than `gpt-5-mini`.
 one loaded copy of the model; without it, Ollama reloads the model between their calls and every
 reply gets much slower.
 
+**Seeing `SocketTimeoutError` or "Fact extraction failed" in `docker compose logs hindsight`?** After
+each reply, Hindsight asks the model to turn the chat into notes in the background, and a laptop model
+can need several minutes for that. Hindsight's default limit is 120 seconds, so the job times out and
+starts over. Copy the three `..._LLM_TIMEOUT` lines from Option B in `.env.example` into your `.env`,
+then run `docker compose up -d`. Your chats aren't affected: only note-taking is slow.
+
 - App: http://localhost:8000
 - API docs (auto-generated, interactive): http://localhost:8000/docs
 - Hindsight memory explorer: http://localhost:9999
