@@ -15,6 +15,10 @@ services:
     env_file: .env
     environment:
       HINDSIGHT_API_LLM_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in .env}
+      # A fixed name for Hindsight's background worker. On startup it picks up jobs it left unfinished,
+      # but only under its own name; by default the name is the container id, which changes whenever
+      # the container is recreated, and those jobs would then be stuck forever.
+      HINDSIGHT_API_WORKER_ID: learnloop-hindsight
     extra_hosts:
       - "host.docker.internal:host-gateway" # lets the container reach Ollama on your computer
     volumes:
