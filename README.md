@@ -73,7 +73,7 @@ service that can fail.
 **Learning**
 - Explanations with small runnable code examples, followed by a quick question to check understanding
 - A **progress report**, written from memory: your strengths, what you struggle with, and what to study next
-- A welcome screen that shows what LearnLoop already remembers, plus starter questions
+- A clean welcome screen with starter questions to get going
 
 **Memory**
 - Long-term memory for each learner, kept in its own Hindsight *bank* so learners never see each other's notes

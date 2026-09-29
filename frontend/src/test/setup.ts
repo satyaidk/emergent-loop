@@ -3,8 +3,9 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup, configure } from "@testing-library/react";
 
-// The Markdown renderer is loaded on demand; on a cold first run that can take over the default 1s.
-configure({ asyncUtilTimeout: 5000 });
+// The Markdown renderer is loaded on demand. On a cold first run, with other test files running in
+// parallel, that can take several seconds, far over the default 1s.
+configure({ asyncUtilTimeout: 15000 });
 
 afterEach(() => {
   cleanup();

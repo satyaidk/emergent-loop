@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { Menu, PanelLeftOpen, SquarePen } from "lucide-react";
-import { api } from "../lib/api";
 import { useAppState } from "../lib/AppState";
 import type { MemoryStatus } from "../lib/memoryStatus";
-import type { MemoryNote, Message } from "../lib/types";
+import type { Message } from "../lib/types";
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
 import { MessageItem } from "./MessageItem";
@@ -33,7 +32,6 @@ export function ChatView({
   const { settings } = state;
   const messages = activeConversation?.messages ?? [];
   const pendingReply = messages.find((m) => m.status === "pending");
-  const notes = useRecentNotes(settings.learnerId, messages.length === 0 && memory.tone === "on");
 
   return (
     <main className={styles.main}>
@@ -64,7 +62,7 @@ export function ChatView({
       {messages.length === 0 ? (
         <div className={styles.scroll}>
           <div className={styles.column}>
-            <EmptyState name={settings.name} notes={notes} onPick={send} />
+            <EmptyState name={settings.name} onPick={send} />
           </div>
         </div>
       ) : (
@@ -128,21 +126,4 @@ function MessageList({
       </div>
     </div>
   );
-}
-
-/** Loads a few remembered facts for the welcome screen. Silent on failure: it's a bonus, not a feature. */
-function useRecentNotes(learnerId: string, enabled: boolean): MemoryNote[] {
-  const [notes, setNotes] = useState<MemoryNote[]>([]);
-  useEffect(() => {
-    if (!enabled) return;
-    let cancelled = false;
-    api
-      .memories(learnerId)
-      .then((all) => !cancelled && setNotes(all.slice(0, 3)))
-      .catch(() => !cancelled && setNotes([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [learnerId, enabled]);
-  return enabled ? notes : [];
 }

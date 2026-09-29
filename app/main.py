@@ -38,6 +38,18 @@ logger = logging.getLogger("learnloop")
 STATIC_DIR = Path(__file__).parent / "static"
 
 
+class WebAppFiles(StaticFiles):
+    """The built web app's files. Those in assets/ have a content hash in their name (index-3fa9c1.js),
+    so a changed file always gets a new name and browsers may keep each one forever."""
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        # `path` uses the OS separator (assets\app.js on Windows), so compare with forward slashes.
+        if path.replace("\\", "/").startswith("assets/") and response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
 def present(memories: list[Memory]) -> list[MemoryOut]:
     """Memories as the web app shows them: readable text, each fact once, in the original order."""
     seen: set[str] = set()
@@ -179,14 +191,18 @@ def create_app(
             raise HTTPException(status_code=503, detail="Memory service unavailable") from exc
 
     # The web app. "/" is checked on every request, so a fresh `npm run build` shows up without a restart.
+    # "no-cache" makes the browser ask for the page every time (cheap, thanks to the ETag), so an update
+    # is visible on the next reload instead of the browser showing a saved old copy.
     @app.get("/", include_in_schema=False)
     async def web_app() -> Response:
         index = static_dir / "index.html"
-        return FileResponse(index) if index.is_file() else HTMLResponse(NOT_BUILT_PAGE)
+        page = FileResponse(index) if index.is_file() else HTMLResponse(NOT_BUILT_PAGE)
+        page.headers["Cache-Control"] = "no-cache"
+        return page
 
     # Its scripts, styles and icons. Mounted last, because a mount at "/" matches every path.
     static_dir.mkdir(parents=True, exist_ok=True)
-    app.mount("/", StaticFiles(directory=static_dir), name="web")
+    app.mount("/", WebAppFiles(directory=static_dir), name="web")
 
     return app
 

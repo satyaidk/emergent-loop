@@ -115,6 +115,14 @@ def test_web_app_and_its_assets_are_served(client):
     assert script.status_code == 200
 
 
+def test_browsers_always_check_for_a_new_page_but_keep_hashed_assets(client):
+    page = client.get("/")
+    script = client.get("/assets/app.js")
+
+    assert page.headers["cache-control"] == "no-cache"
+    assert "immutable" in script.headers["cache-control"]
+
+
 def test_api_routes_still_win_over_the_web_app(client):
     res = client.get("/healthz")
 

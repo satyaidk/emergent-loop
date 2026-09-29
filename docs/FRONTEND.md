@@ -58,7 +58,7 @@ frontend/
     │   ├── MessageItem.tsx     One message: your bubble, or the tutor's reply with its notes
     │   ├── Markdown.tsx        Turns the reply's Markdown into headings, lists and code blocks
     │   ├── Composer.tsx        The message box: Enter to send, Stop, the memory switch
-    │   ├── EmptyState.tsx      The welcome screen with notes and starter questions
+    │   ├── EmptyState.tsx      The welcome screen with starter questions
     │   ├── SettingsDialog.tsx  The five settings tabs
     │   ├── MemoryDialog.tsx    "What LearnLoop remembers" and the progress report
     │   ├── Dialog.tsx          A pop-up window (built on the browser's <dialog>)
