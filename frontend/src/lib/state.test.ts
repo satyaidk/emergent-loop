@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reducer, shortTermHistory, titleFrom } from "./state";
+import { learningExperience, reducer, shortTermHistory, titleFrom } from "./state";
 import { emptyState } from "./storage";
 import type { Message, PersistedState } from "./types";
 
@@ -78,6 +78,47 @@ describe("reducer", () => {
     const state = reducer(withOneChat(), { type: "renameChat", id: "c1", title: "   " });
 
     expect(state.conversations[0].title).toBe("Recursion");
+  });
+
+  it("keeps suggestions per chat, and clears only that chat's when a new question is sent", () => {
+    let state = withOneChat();
+    state = reducer(state, {
+      type: "sendMessage",
+      conversationId: "c2",
+      title: "Lists",
+      userMessage: user("u2", "Lists?"),
+      pendingReply: reply("r2", "", "pending"),
+      now: 200,
+    });
+    state = reducer(state, { type: "setSuggestions", conversationId: "c1", suggestions: ["More recursion?"] });
+    state = reducer(state, { type: "setSuggestions", conversationId: "c2", suggestions: ["More lists?"] });
+
+    const chat = (id: string) => state.conversations.find((c) => c.id === id)!;
+    expect(chat("c1").suggestions).toEqual(["More recursion?"]);
+    expect(chat("c2").suggestions).toEqual(["More lists?"]);
+
+    state = reducer(state, {
+      type: "sendMessage",
+      conversationId: "c1",
+      title: "",
+      userMessage: user("u3", "Again"),
+      pendingReply: reply("r3", "", "pending"),
+      now: 300,
+    });
+    expect(chat("c1").suggestions).toEqual([]);
+    expect(chat("c2").suggestions).toEqual(["More lists?"]);
+  });
+
+  it("counts learning experience as answered questions across chats", () => {
+    const state = reducer(withOneChat(), {
+      type: "updateMessage",
+      conversationId: "c1",
+      messageId: "r1",
+      patch: { status: "done", content: "Answer" },
+    });
+
+    expect(learningExperience(withOneChat().conversations)).toBe(0);
+    expect(learningExperience(state.conversations)).toBe(1);
   });
 
   it("merges settings instead of replacing them", () => {

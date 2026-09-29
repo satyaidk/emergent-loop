@@ -4,7 +4,7 @@
 // deletes them or clears their browser data. Long-term memory is different: it lives in
 // Hindsight on the server, so it survives a cleared browser.
 
-import type { Conversation, PersistedState, Settings } from "./types";
+import type { Conversation, PersistedState, Settings, StarterCache } from "./types";
 
 export const STORAGE_KEY = "learnloop.state.v1";
 
@@ -23,10 +23,11 @@ export const DEFAULT_SETTINGS: Settings = {
   useMemory: true,
   showMemories: true,
   historyLength: 12,
+  showSuggestions: true,
 };
 
 export function emptyState(): PersistedState {
-  return { version: 1, conversations: [], activeId: null, settings: { ...DEFAULT_SETTINGS } };
+  return { version: 1, conversations: [], activeId: null, settings: { ...DEFAULT_SETTINGS }, starters: null };
 }
 
 /** Reads saved state. Anything missing, corrupt or from an unknown version falls back to defaults. */
@@ -40,7 +41,13 @@ export function loadState(storage: Storage | undefined = safeLocalStorage()): Pe
 
     const conversations = parsed.conversations.filter(isConversation).map(settleInterrupted);
     const activeId = conversations.some((c) => c.id === parsed.activeId) ? (parsed.activeId ?? null) : null;
-    return { version: 1, conversations, activeId, settings: { ...DEFAULT_SETTINGS, ...parsed.settings } };
+    return {
+      version: 1,
+      conversations,
+      activeId,
+      settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+      starters: isStarterCache(parsed.starters) ? parsed.starters : null,
+    };
   } catch {
     return emptyState();
   }
@@ -105,6 +112,11 @@ function safeLocalStorage(): Storage | undefined {
   } catch {
     return undefined; // some privacy modes throw just for touching localStorage
   }
+}
+
+function isStarterCache(value: unknown): value is StarterCache {
+  const s = value as StarterCache;
+  return typeof s === "object" && s !== null && typeof s.learnerId === "string" && Array.isArray(s.items);
 }
 
 function isConversation(value: unknown): value is Conversation {

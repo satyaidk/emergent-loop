@@ -64,7 +64,7 @@ highlighter pen. A memory window lists everything LearnLoop knows about you, and
 [Ollama](https://ollama.com): no account, no API key, no cost, and your conversations don't leave your
 machine. OpenAI works too, with one setting.
 
-**Built like production software.** A layered, tested Python server; a typed React web app; 74
+**Built like production software.** A layered, tested Python server; a typed React web app; 97
 automated tests; continuous integration; one-command Docker setup; and graceful handling of every
 service that can fail.
 
@@ -73,7 +73,9 @@ service that can fail.
 **Learning**
 - Explanations with small runnable code examples, followed by a quick question to check understanding
 - A **progress report**, written from memory: your strengths, what you struggle with, and what to study next
-- A clean welcome screen with starter questions to get going
+- **Suggested questions in every chat**: after each answer, three follow-ups about that chat's topic,
+  kept per chat, so a chat about SQL never suggests something from a chat about recursion
+- A new chat opens with starter ideas drawn from what you've been learning, refreshed as you learn more
 
 **Memory**
 - Long-term memory for each learner, kept in its own Hindsight *bank* so learners never see each other's notes
@@ -156,7 +158,7 @@ flowchart LR
 | Memory | [Hindsight](https://github.com/vectorize-io/hindsight) | Fact extraction, multi-strategy recall, reflection |
 | Model | Ollama (`qwen3:4b-instruct`) or OpenAI (`gpt-5-mini`) | Answers, through one OpenAI-compatible client |
 | Delivery | Docker Compose, multi-stage Dockerfile | One command starts everything |
-| Quality | pytest, Vitest, Testing Library, ruff, oxlint, GitHub Actions | 74 tests, linting and builds on every push |
+| Quality | pytest, Vitest, Testing Library, ruff, oxlint, GitHub Actions | 97 tests, linting and builds on every push |
 
 The design decisions, the alternatives that were considered and the known risks are in the
 [design doc](docs/DESIGN.md).
@@ -172,15 +174,17 @@ The design decisions, the alternatives that were considered and the known risks 
 ## Engineering highlights
 
 - **Testable by design.** The server talks to memory and to the model through small interfaces.
-  Tests swap in fakes, so 35 server tests run in seconds with no network, key or model.
+  Tests swap in fakes, so 50 server tests run in seconds with no network, key or model.
 - **Graceful degradation.** If the memory service is down, the tutor still answers (without
   personalisation) and says so. If the model is unreachable, the web app shows the real reason and a
   retry button. A missing key stops startup with a clear message.
+- **Suggestions at no extra cost.** Follow-up questions are written in the same model call as the
+  answer and cut off by the server, so they add no waiting time, even on a small local model.
 - **Security basics.** Learner IDs are validated before they touch storage; memories are escaped and
   delimited in prompts; replies are rendered without raw HTML; the container runs as a non-root user.
 - **A considered web app.** One reducer for every state change, a versioned storage format, and code
   splitting that cut the first download from 593 KB to 271 KB. Keyboard and screen-reader friendly.
-- **Tested like a user.** 39 web app tests type into the real interface against a fake server.
+- **Tested like a user.** 47 web app tests type into the real interface against a fake server.
 - **Continuous integration.** Lint, type checks, tests, a production build and a Docker build run on
   every push and pull request.
 

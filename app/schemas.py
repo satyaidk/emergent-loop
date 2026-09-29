@@ -22,6 +22,7 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     history: list[Turn] = Field(default_factory=list, max_length=40)
     use_memory: bool = True
+    suggest_followups: bool = True
 
 
 class MemoryOut(BaseModel):
@@ -34,6 +35,11 @@ class ChatResponse(BaseModel):
     reply: str
     memories_used: list[MemoryOut]
     memory_available: bool
+    suggestions: list[str] = Field(default_factory=list, description="Follow-up questions about this chat's topic")
+
+
+class SuggestionsResponse(BaseModel):
+    suggestions: list[str]
 
 
 class MemoriesResponse(BaseModel):

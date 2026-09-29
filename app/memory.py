@@ -89,6 +89,7 @@ class HindsightMemoryStore:
     bank_prefix: str = "learnloop"
     recall_budget: str = "mid"
     recall_max_tokens: int = 2000
+    recall_max_notes: int = 6
     _configured_banks: set[str] = field(default_factory=set)
 
     def bank_id(self, user_id: str) -> str:
@@ -122,7 +123,8 @@ class HindsightMemoryStore:
             budget=self.recall_budget,
             max_tokens=self.recall_max_tokens,
         )
-        return [Memory(text=r.text, type=r.type, occurred_at=r.occurred_start) for r in response.results]
+        best = response.results[: self.recall_max_notes]  # results arrive ranked, most relevant first
+        return [Memory(text=r.text, type=r.type, occurred_at=r.occurred_start) for r in best]
 
     async def list_all(self, user_id: str, limit: int = 100) -> list[Memory]:
         """Everything stored for a learner, newest first (unlike recall, which ranks by relevance)."""

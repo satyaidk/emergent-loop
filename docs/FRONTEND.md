@@ -50,6 +50,7 @@ frontend/
     ├── hooks/                  Reusable bits of behaviour
     │   ├── useServerStatus.ts  Checks the server and memory every 30 seconds
     │   ├── useTheme.ts         Applies light/dark mode and text size
+    │   ├── useStarters.ts      Starter ideas for a new chat, from your notes, saved per learner
     │   └── useNow.ts           A ticking clock for the "thinking" timer
     │
     ├── components/             The pieces you see
@@ -58,6 +59,7 @@ frontend/
     │   ├── MessageItem.tsx     One message: your bubble, or the tutor's reply with its notes
     │   ├── Markdown.tsx        Turns the reply's Markdown into headings, lists and code blocks
     │   ├── Composer.tsx        The message box: Enter to send, Stop, the memory switch
+    │   ├── Suggestions.tsx     Follow-up question buttons under the newest reply
     │   ├── EmptyState.tsx      The welcome screen with starter questions
     │   ├── SettingsDialog.tsx  The five settings tabs
     │   ├── MemoryDialog.tsx    "What LearnLoop remembers" and the progress report
@@ -87,6 +89,17 @@ names only apply to that one component, so two components can both have a `.titl
 If you press **Stop**, step 5 is cancelled with an `AbortController`. If the server fails, the reply
 shows the reason and a **Try again** button.
 
+## Suggested questions
+
+- **Follow-ups (per chat).** The server asks the model to end each answer with three follow-up
+  questions about *this chat's* topic, cuts them off the answer, and returns them separately. The web
+  app saves them on that chat (`conversation.suggestions`), replaces them after every reply, and clears
+  them while a new answer is on its way. Switching chats switches suggestions.
+- **Starters (new chat).** `useStarters` asks the server for ideas based on the learner's notes. They
+  are saved per learner with an "experience" count (how many answers the learner has had), and only
+  rebuilt after new answers, so opening a new chat usually costs no model call.
+- **Settings → General → Suggest questions** turns both off.
+
 ## Ideas worth knowing for interviews
 
 - **One reducer for all changes** (`state.ts`): every change is a named action like `sendMessage`
@@ -109,7 +122,7 @@ Run these inside `frontend/`:
 |---|---|
 | `npm install` | Downloads the libraries into `node_modules/` (once, and after `package.json` changes) |
 | `npm run dev` | Runs the app at http://localhost:5173 with instant reload. The API must be running on :8000. |
-| `npm test` | Runs the 38 tests |
+| `npm test` | Runs the 47 tests |
 | `npm run lint` | Checks for common mistakes (oxlint) |
 | `npm run typecheck` | Checks the types (TypeScript) |
 | `npm run build` | Builds the production app into `../app/static/`, which FastAPI serves |

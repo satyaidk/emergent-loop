@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     bank_prefix: str = "learnloop"
     recall_budget: str = "mid"  # "low" | "mid" | "high": how hard recall searches
     recall_max_tokens: int = 2000  # cap on how much memory text we put in the prompt
+    # Recall returns notes best-first; beyond the top few they're mostly unrelated, and a small model
+    # follows whatever fills its prompt, so keep only these.
+    recall_max_notes: int = 6
 
     # --- The tutor's brain: any OpenAI-compatible API (OpenAI itself, or Ollama on your computer) ---
     # Read from the standard OPENAI_API_KEY variable, not LEARNLOOP_*, so the same

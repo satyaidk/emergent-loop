@@ -18,6 +18,7 @@ export interface ChatRequest {
   message: string;
   history: { role: "user" | "assistant"; content: string }[];
   use_memory: boolean;
+  suggest_followups: boolean;
 }
 
 export const api = {
@@ -32,6 +33,10 @@ export const api = {
     (await request<{ memories: MemoryNote[] }>(`/api/users/${encodeURIComponent(learnerId)}/memories`)).memories,
 
   report: (learnerId: string) => request<ProgressReport>(`/api/users/${encodeURIComponent(learnerId)}/report`),
+
+  starters: async (learnerId: string, count = 4) =>
+    (await request<{ suggestions: string[] }>(`/api/users/${encodeURIComponent(learnerId)}/starters?count=${count}`))
+      .suggestions,
 
   forget: (learnerId: string) =>
     request<void>(`/api/users/${encodeURIComponent(learnerId)}/memories`, { method: "DELETE" }),

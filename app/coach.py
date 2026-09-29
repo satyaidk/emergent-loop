@@ -12,8 +12,9 @@ from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 
 from app.llm import LLM, ChatMessage
-from app.memory import Memory, MemoryStore
-from app.prompts import REPORT_QUESTION, build_system_prompt, format_turn
+from app.memory import Memory, MemoryStore, display_text
+from app.prompts import REPORT_QUESTION, build_starters_prompt, build_system_prompt, format_turn
+from app.suggestions import split_followups
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class CoachReply:
     reply: str
     memories_used: list[Memory] = field(default_factory=list)
     memory_available: bool = True
+    suggestions: list[str] = field(default_factory=list)
 
 
 class CoachService:
@@ -46,6 +48,7 @@ class CoachService:
         message: str,
         history: list[ChatMessage] | None = None,
         use_memory: bool = True,
+        suggest: bool = True,
     ) -> CoachReply:
         memories: list[Memory] = []
         memory_available = True
@@ -62,7 +65,10 @@ class CoachService:
 
         # 2. THINK: the LLM sees long-term memory (system prompt) + short-term history (messages).
         messages = [*_trim_history(history or [], self._max_history), {"role": "user", "content": message}]
-        reply = await self._llm.complete(build_system_prompt(memories), messages)
+        # The model also writes follow-up questions at the end; they are cut off the answer here, so
+        # they reach the learner as buttons and never end up in memory as if they were the lesson.
+        raw = await self._llm.complete(build_system_prompt(memories, followups=suggest), messages)
+        reply, suggestions = split_followups(raw)
 
         # 3. RETAIN: store this exchange so future sessions can learn from it.
         if use_memory and memory_available:
@@ -71,7 +77,25 @@ class CoachService:
             except Exception:
                 logger.exception("retain failed; this turn won't be remembered", extra={"user_id": user_id})
 
-        return CoachReply(reply=reply, memories_used=memories, memory_available=memory_available)
+        return CoachReply(
+            reply=reply,
+            memories_used=memories,
+            memory_available=memory_available,
+            suggestions=suggestions if suggest else [],
+        )
+
+    async def starters(self, user_id: str, count: int = 4) -> list[str]:
+        """Questions to open a new chat with, drawn from what LearnLoop knows about this learner.
+
+        Returns [] for a learner with no notes yet; the web app then shows its general starters.
+        """
+        notes = await self._memory.list_all(user_id, limit=12)
+        notes = [Memory(text=display_text(n.text), type=n.type, occurred_at=n.occurred_at) for n in notes]
+        if not notes:
+            return []
+        request = [{"role": "user", "content": "Suggest questions to start a new chat."}]
+        raw = await self._llm.complete(build_starters_prompt(notes, count), request)
+        return split_followups(raw, limit=count)[1]
 
     async def recall(self, user_id: str, query: str) -> list[Memory]:
         return await self._memory.recall(user_id, query)
