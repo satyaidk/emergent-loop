@@ -31,6 +31,8 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   messages: Message[];
+  /** Follow-up questions about this chat's topic, replaced after every reply. Each chat has its own. */
+  suggestions?: string[];
 }
 
 export type Theme = "system" | "light" | "dark";
@@ -46,6 +48,17 @@ export interface Settings {
   showMemories: boolean;
   /** How many recent messages of the current chat go along with each question (short-term memory). */
   historyLength: number;
+  /** Show follow-up questions under replies and personalised starters for new chats. */
+  showSuggestions: boolean;
+}
+
+/** Starter questions for a new chat, generated from one learner's notes. */
+export interface StarterCache {
+  learnerId: string;
+  /** How many replies the learner had received when these were made; more learning means new starters. */
+  experience: number;
+  items: string[];
+  createdAt: number;
 }
 
 /** Everything saved in the browser. `version` lets a future release migrate old data. */
@@ -54,6 +67,7 @@ export interface PersistedState {
   conversations: Conversation[];
   activeId: string | null;
   settings: Settings;
+  starters: StarterCache | null;
 }
 
 // ---- API responses ----
@@ -62,6 +76,7 @@ export interface ChatResponse {
   reply: string;
   memories_used: MemoryNote[];
   memory_available: boolean;
+  suggestions?: string[];
 }
 
 export interface Health {

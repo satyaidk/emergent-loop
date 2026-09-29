@@ -29,6 +29,7 @@ from app.schemas import (
     HealthResponse,
     MemoriesResponse,
     MemoryOut,
+    SuggestionsResponse,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -85,6 +86,7 @@ def build_production_dependencies() -> tuple[CoachService, MemoryStore]:
         bank_prefix=settings.bank_prefix,
         recall_budget=settings.recall_budget,
         recall_max_tokens=settings.recall_max_tokens,
+        recall_max_notes=settings.recall_max_notes,
     )
     llm = OpenAILLM(
         api_key=settings.openai_api_key.get_secret_value(),
@@ -148,6 +150,7 @@ def create_app(
                 message=body.message,
                 history=[turn.model_dump() for turn in body.history],
                 use_memory=body.use_memory,
+                suggest=body.suggest_followups,
             )
         except LLMUnavailableError as exc:
             logger.error("chat failed: %s", exc)
@@ -156,6 +159,7 @@ def create_app(
             reply=result.reply,
             memories_used=present(result.memories_used),
             memory_available=result.memory_available,
+            suggestions=result.suggestions,
         )
 
     @app.get("/api/users/{user_id}/memories", response_model=MemoriesResponse)
@@ -171,6 +175,22 @@ def create_app(
             logger.exception("memory lookup failed")
             raise HTTPException(status_code=503, detail="Memory service unavailable") from exc
         return MemoriesResponse(memories=present(found))
+
+    @app.get("/api/users/{user_id}/starters", response_model=SuggestionsResponse)
+    async def starters(
+        request: Request,
+        user_id: str = PathParam(pattern=USER_ID_PATTERN),
+        count: int = Query(default=4, ge=1, le=6),
+    ) -> SuggestionsResponse:
+        """Questions for a new chat, based on the learner's notes ([] for a learner with none)."""
+        try:
+            return SuggestionsResponse(suggestions=await request.app.state.coach.starters(user_id, count))
+        except LLMUnavailableError as exc:
+            logger.error("starters failed: %s", exc)
+            raise HTTPException(status_code=502, detail=exc.user_message) from exc
+        except Exception as exc:
+            logger.exception("starters failed")
+            raise HTTPException(status_code=503, detail="Memory service unavailable") from exc
 
     @app.delete("/api/users/{user_id}/memories", status_code=204)
     async def forget(request: Request, user_id: str = PathParam(pattern=USER_ID_PATTERN)) -> Response:

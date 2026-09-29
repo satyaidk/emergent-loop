@@ -110,6 +110,14 @@ function GeneralTab() {
           onChange={(enterToSend) => set({ enterToSend })}
         />
       </Section>
+      <Section title="Suggestions">
+        <Switch
+          label="Suggest questions"
+          description="Follow-up questions under each reply, about that chat's topic, and starter ideas for new chats based on what you've been learning."
+          checked={settings.showSuggestions}
+          onChange={(showSuggestions) => set({ showSuggestions })}
+        />
+      </Section>
     </>
   );
 }

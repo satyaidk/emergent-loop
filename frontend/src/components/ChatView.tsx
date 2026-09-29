@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { Menu, PanelLeftOpen, SquarePen } from "lucide-react";
+import { useStarters } from "../hooks/useStarters";
 import { useAppState } from "../lib/AppState";
 import type { MemoryStatus } from "../lib/memoryStatus";
 import type { Message } from "../lib/types";
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
 import { MessageItem } from "./MessageItem";
+import { Suggestions } from "./Suggestions";
 import styles from "./ChatView.module.css";
 
 interface Props {
@@ -32,6 +34,9 @@ export function ChatView({
   const { settings } = state;
   const messages = activeConversation?.messages ?? [];
   const pendingReply = messages.find((m) => m.status === "pending");
+  const starters = useStarters(memory.tone === "on");
+  // This chat's own follow-ups: other chats keep theirs, so switching chats switches suggestions.
+  const followUps = settings.showSuggestions ? (activeConversation?.suggestions ?? []) : [];
 
   return (
     <main className={styles.main}>
@@ -62,11 +67,17 @@ export function ChatView({
       {messages.length === 0 ? (
         <div className={styles.scroll}>
           <div className={styles.column}>
-            <EmptyState name={settings.name} onPick={send} />
+            <EmptyState name={settings.name} starters={starters.items} personal={starters.personal} onPick={send} />
           </div>
         </div>
       ) : (
-        <MessageList messages={messages} showMemories={settings.showMemories} onRetry={retry} />
+        <MessageList
+          messages={messages}
+          showMemories={settings.showMemories}
+          followUps={followUps}
+          onPick={send}
+          onRetry={retry}
+        />
       )}
 
       <div className={styles.dock}>
@@ -92,15 +103,21 @@ export function ChatView({
 function MessageList({
   messages,
   showMemories,
+  followUps,
+  onPick,
   onRetry,
 }: {
   messages: Message[];
   showMemories: boolean;
+  followUps: string[];
+  onPick: (question: string) => void;
   onRetry: (id: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastReply = [...messages].reverse().find((m) => m.role === "assistant");
   const lastStatus = messages.at(-1)?.status;
+  // Only under a finished answer: while the tutor is thinking, or after an error, there's nothing to follow up.
+  const showFollowUps = lastStatus === "done" && followUps.length > 0;
 
   // Follow new messages, unless the learner has scrolled up to read something older.
   useEffect(() => {
@@ -109,7 +126,7 @@ function MessageList({
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 160;
     const justSent = lastStatus === "pending";
     if (nearBottom || justSent) box.scrollTo?.({ top: box.scrollHeight, behavior: "smooth" });
-  }, [messages.length, lastStatus]);
+  }, [messages.length, lastStatus, showFollowUps]);
 
   return (
     <div className={styles.scroll} ref={scrollRef}>
@@ -123,6 +140,7 @@ function MessageList({
             onRetry={onRetry}
           />
         ))}
+        {showFollowUps && <Suggestions items={followUps} onPick={onPick} />}
       </div>
     </div>
   );

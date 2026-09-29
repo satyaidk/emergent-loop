@@ -1,18 +1,14 @@
 import styles from "./EmptyState.module.css";
 
-const STARTERS = [
-  "Explain recursion with one tiny example I can run",
-  "Why does my for loop skip the last item?",
-  "Quiz me with three quick questions on Python lists",
-  "From what you know about me, what should I learn next?",
-];
-
 interface Props {
   name: string;
+  /** Questions to start with: personal ones from the learner's notes, or general ones. */
+  starters: string[];
+  personal: boolean;
   onPick: (prompt: string) => void;
 }
 
-export function EmptyState({ name, onPick }: Props) {
+export function EmptyState({ name, starters, personal, onPick }: Props) {
   const firstName = name.trim().split(/\s+/)[0];
   return (
     <div className={styles.empty}>
@@ -24,8 +20,9 @@ export function EmptyState({ name, onPick }: Props) {
         left off.
       </p>
 
-      <ul className={styles.starters} aria-label="Ideas to start with">
-        {STARTERS.map((prompt) => (
+      {personal && <p className={styles.startersNote}>Ideas based on what you&apos;ve been learning</p>}
+      <ul className={`${styles.starters} ${personal ? styles.afterNote : ""}`} aria-label="Ideas to start with">
+        {starters.map((prompt) => (
           <li key={prompt}>
             <button type="button" onClick={() => onPick(prompt)}>
               {prompt}

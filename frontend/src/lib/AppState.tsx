@@ -54,6 +54,7 @@ export function AppStateProvider({ children, initialState }: { children: ReactNo
           message: question,
           history: shortTermHistory(before, settings.historyLength),
           use_memory: settings.useMemory,
+          suggest_followups: settings.showSuggestions,
         },
         controller.signal,
       );
@@ -65,6 +66,12 @@ export function AppStateProvider({ children, initialState }: { children: ReactNo
         elapsedMs: Date.now() - started,
         error: undefined,
       });
+      // Follow-ups belong to the chat's newest answer. If this reply was re-asked for an older
+      // message, the chat has moved on and these would be about the wrong turn.
+      const chat = stateRef.current.conversations.find((c) => c.id === conversationId);
+      if (chat?.messages.at(-1)?.id === replyId) {
+        dispatch({ type: "setSuggestions", conversationId, suggestions: response.suggestions ?? [] });
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         update({ status: "stopped", elapsedMs: Date.now() - started });
@@ -108,6 +115,7 @@ export function AppStateProvider({ children, initialState }: { children: ReactNo
         messageId: replyId,
         patch: { status: "pending", content: "", error: undefined, memories: undefined, createdAt: Date.now() },
       });
+      dispatch({ type: "setSuggestions", conversationId: conversation.id, suggestions: [] });
       void ask(conversation.id, replyId, question.content, conversation.messages.slice(0, index - 1));
     },
     [ask],

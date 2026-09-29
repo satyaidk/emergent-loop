@@ -68,7 +68,8 @@ at http://localhost:8000. A guide to the web app's code is in [FRONTEND.md](FRON
 
 | Method | Path | What it does |
 |---|---|---|
-| `POST` | `/api/chat` | Chat turn. Body: `user_id`, `message`, optional `history`, `use_memory` |
+| `POST` | `/api/chat` | Chat turn. Body: `user_id`, `message`, optional `history`, `use_memory`, `suggest_followups`. Returns the reply, the notes it used and follow-up `suggestions` |
+| `GET` | `/api/users/{user_id}/starters?count=4` | Starter questions for a new chat, from the learner's notes |
 | `GET` | `/api/users/{user_id}/memories` | Everything the tutor remembers about a learner (`?q=` ranks by relevance instead) |
 | `DELETE` | `/api/users/{user_id}/memories` | Delete a learner's long-term memory |
 | `GET` | `/api/users/{user_id}/report` | Structured progress report built with Hindsight `reflect` |
@@ -78,12 +79,12 @@ at http://localhost:8000. A guide to the web app's code is in [FRONTEND.md](FRON
 ## Quality
 
 ```bash
-pytest -q                     # 35 server tests, run offline using fakes (no API key, no server)
+pytest -q                     # 50 server tests, run offline using fakes (no API key, no server)
 ruff check . && ruff format --check .
 python -m scripts.eval_memory # measures reply quality with memory ON vs OFF (needs the live stack)
 
 cd frontend
-npm test                      # 39 web app tests (Vitest + Testing Library), with a fake server
+npm test                      # 47 web app tests (Vitest + Testing Library), with a fake server
 npm run lint && npm run typecheck
 ```
 

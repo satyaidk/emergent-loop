@@ -3,7 +3,7 @@
 // makes every change easy to follow and to unit-test.
 
 import { mergeConversations } from "./storage";
-import type { Conversation, Message, PersistedState, Settings } from "./types";
+import type { Conversation, Message, PersistedState, Settings, StarterCache } from "./types";
 
 export type Action =
   | { type: "newChat" }
@@ -21,6 +21,8 @@ export type Action =
       now: number;
     }
   | { type: "updateMessage"; conversationId: string; messageId: string; patch: Partial<Message> }
+  | { type: "setSuggestions"; conversationId: string; suggestions: string[] }
+  | { type: "setStarters"; starters: StarterCache }
   | { type: "updateSettings"; patch: Partial<Settings> };
 
 export function reducer(state: PersistedState, action: Action): PersistedState {
@@ -55,13 +57,15 @@ export function reducer(state: PersistedState, action: Action): PersistedState {
       const { conversationId, userMessage, pendingReply, now } = action;
       const existing = state.conversations.find((c) => c.id === conversationId);
       const conversation: Conversation = existing
-        ? { ...existing, messages: [...existing.messages, userMessage, pendingReply], updatedAt: now }
+        ? // The old follow-ups were about the previous reply; new ones arrive with the next answer.
+          { ...existing, messages: [...existing.messages, userMessage, pendingReply], updatedAt: now, suggestions: [] }
         : {
             id: conversationId,
             title: action.title,
             createdAt: now,
             updatedAt: now,
             messages: [userMessage, pendingReply],
+            suggestions: [],
           };
       // The chat with the newest message moves to the top of the list.
       const others = state.conversations.filter((c) => c.id !== conversationId);
@@ -73,6 +77,12 @@ export function reducer(state: PersistedState, action: Action): PersistedState {
         ...c,
         messages: c.messages.map((m) => (m.id === action.messageId ? { ...m, ...action.patch } : m)),
       }));
+
+    case "setSuggestions":
+      return updateConversation(state, action.conversationId, (c) => ({ ...c, suggestions: action.suggestions }));
+
+    case "setStarters":
+      return { ...state, starters: action.starters };
 
     case "updateSettings":
       return { ...state, settings: { ...state.settings, ...action.patch } };
@@ -97,6 +107,14 @@ export function titleFrom(text: string, maxLength = 48): string {
 export function newId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** How much a learner has learned so far, measured in answered questions across all chats. */
+export function learningExperience(conversations: Conversation[]): number {
+  return conversations.reduce(
+    (total, c) => total + c.messages.filter((m) => m.role === "assistant" && m.status === "done").length,
+    0,
+  );
 }
 
 /** The server rejects longer history turns (schemas.py: Turn.content max_length). */

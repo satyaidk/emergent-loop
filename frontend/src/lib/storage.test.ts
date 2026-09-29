@@ -49,6 +49,16 @@ describe("loadState", () => {
     expect(loadState(localStorage).conversations[0].messages[1].status).toBe("stopped");
   });
 
+  it("keeps saved starters, and loads data saved before starters existed", () => {
+    const starters = { learnerId: "sam", experience: 3, items: ["Practise joins?"], createdAt: 1 };
+    saveState({ ...emptyState(), starters }, localStorage);
+    expect(loadState(localStorage).starters).toEqual(starters);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, conversations: [], activeId: null, settings: {} }));
+    expect(loadState(localStorage).starters).toBeNull();
+    expect(loadState(localStorage).settings.showSuggestions).toBe(true);
+  });
+
   it("fills in settings added by newer versions of the app", () => {
     localStorage.setItem(
       STORAGE_KEY,

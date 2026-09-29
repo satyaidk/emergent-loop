@@ -22,6 +22,12 @@
   font-size: 1.08rem;
 }
 
+.startersNote {
+  margin: 28px 0 0;
+  color: var(--ink-3);
+  font-size: 0.9rem;
+}
+
 .starters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -49,6 +55,10 @@
 .starters button:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.starters.afterNote {
+  margin-top: 10px;
 }
 
 @media (max-width: 640px) {

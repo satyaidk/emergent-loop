@@ -29,3 +29,14 @@ if (!window.matchMedia) {
 if (!Element.prototype.scrollTo) {
   Element.prototype.scrollTo = () => {};
 }
+
+// jsdom has <dialog> but not its showModal()/close(), so Settings and other windows would never open.
+if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute("open");
+    this.dispatchEvent(new Event("close"));
+  };
+}
